@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>빼빼로 편지가 도착했어요 💌</title>
+<meta property="og:title" content="빼빼로 편지가 도착했어요 💌">
+<meta property="og:description" content="봉투를 열어서 확인해 보세요!">
+<meta property="og:image" content="https://soyeon-log.github.io/pepero/og_letter.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { min-height:100%; }
+  body {
+    font-family:'Gowun Dodum', -apple-system, 'Apple SD Gothic Neo', sans-serif;
+    color:#3a2a2a; background:#f3c9c4;
+    display:flex; justify-content:center; min-height:100dvh; padding:16px; overflow-x:hidden;
+    transition:background-color .8s;
+  }
+  body.opened { background:#e98a86; }
+  .stage { width:100%; max-width:380px; position:relative; margin:auto 0; }
+  .hidden { display:none !important; }
+
+  /* ---------- 봉투 ---------- */
+  .env { text-align:center; }
+  .env .title { font-family:'Nanum Pen Script','Gowun Dodum',cursive; font-size:clamp(22px,7vw,30px); color:#5a2f2b; word-break:keep-all; }
+  .env .who { font-size:15px; color:#8a5a55; margin:2px 0 calc(min(100vw - 32px, 380px) * 0.44); }
+  .env .who b { color:#5a2f2b; }
+  .envelope {
+    position:relative; width:100%; aspect-ratio:1.45; margin:0 auto; cursor:pointer;
+    filter:drop-shadow(0 14px 22px rgba(120,40,40,.25));
+    animation:float 2.8s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  .envelope .back { position:absolute; inset:0; background:#fff7f2; border-radius:10px; z-index:0; }
+  .envelope .peek {
+    position:absolute; left:50%; bottom:30%; width:28%; transform:translateX(-50%);
+    opacity:0; z-index:2; transition:transform .9s cubic-bezier(.2,.9,.3,1.2), opacity .3s;
+  }
+  .envelope .front {
+    position:absolute; inset:0; border-radius:10px; z-index:3;
+    background:
+      linear-gradient(to top right, #fbe4dd 49.6%, transparent 50%) left bottom/50.5% 62% no-repeat,
+      linear-gradient(to top left,  #fbe4dd 49.6%, transparent 50%) right bottom/50.5% 62% no-repeat;
+  }
+  .envelope .flap {
+    position:absolute; left:0; right:0; top:0; height:58%;
+    background:#f7d3cb; clip-path:polygon(0 0,100% 0,50% 100%);
+    transform-origin:top; transition:transform .6s ease; z-index:4;
+  }
+  .envelope .seal {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:52px; height:52px; border-radius:50%; background:#d23c47; color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:24px;
+    box-shadow:0 3px 8px rgba(0,0,0,.2); transition:opacity .3s; z-index:5;
+  }
+  .envelope.open .flap { transform:rotateX(180deg); z-index:1; }
+  .envelope.open .seal { opacity:0; }
+  .envelope.open .peek { opacity:1; transform:translate(-50%, -66%); }
+  .env .tap {
+    margin-top:22px; border:0; background:#d23c47; color:#fff; border-radius:999px;
+    padding:13px 34px; font:inherit; font-size:17px; cursor:pointer;
+    box-shadow:0 6px 16px rgba(210,60,71,.35);
+  }
+  .env .hint2 { margin-top:10px; font-size:13px; color:#a07873; }
+
+  /* ---------- 편지 ---------- */
+  .letter {
+    background:#fffdf8; border-radius:14px; padding:34px 26px 30px; position:relative;
+    box-shadow:0 14px 40px rgba(120,40,40,.25);
+    background-image:repeating-linear-gradient(#fffdf8 0 37px, #f1e4dc 37px 38px);
+    background-position:0 22px;
+    animation:up .8s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes up { from { opacity:0; transform:translateY(50px); } }
+  .letter::before, .reply::before {
+    content:""; position:absolute; top:-12px; left:50%; width:84px; height:24px;
+    transform:translateX(-50%) rotate(-3deg); background:rgba(233,138,134,.55); border-radius:3px;
+  }
+  .letter .prod { position:absolute; right:-10px; top:-34px; width:62px; transform:rotate(10deg);
+    filter:drop-shadow(0 4px 6px rgba(0,0,0,.2)); }
+  .letter p {
+    font-family:'Nanum Pen Script','Gowun Dodum',cursive;
+    font-size:25px; line-height:38px; min-height:38px; word-break:keep-all;
+    opacity:0; transform:translateY(6px); transition:opacity .6s, transform .6s;
+  }
+  .letter p.on { opacity:1; transform:none; }
+  .letter .to { font-size:28px; color:#222; }
+  .letter .from { text-align:right; margin-top:8px; }
+  .after { text-align:center; margin-top:20px; opacity:0; transition:opacity .6s; }
+  .after.on { opacity:1; }
+  .pill {
+    border:0; border-radius:999px; padding:12px 26px; font:inherit; font-size:16px; cursor:pointer;
+    background:#fff; color:#c23a44; box-shadow:0 4px 12px rgba(120,40,40,.2);
+  }
+
+  /* ---------- 답장 ---------- */
+  .reply {
+    background:#fffdf8; border-radius:14px; padding:30px 22px 24px; position:relative;
+    box-shadow:0 14px 40px rgba(120,40,40,.25);
+    font-family:-apple-system,'Apple SD Gothic Neo',sans-serif;
+    animation:up .7s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .reply h2 { font-family:'Nanum Pen Script','Gowun Dodum',cursive; font-weight:400; font-size:30px; color:#222; }
+  .reply .rname {
+    width:100%; border:0; border-bottom:1px dashed #e7cfc8; background:transparent; outline:none;
+    font-family:'Nanum Pen Script','Gowun Dodum',cursive; font-size:26px; color:#222; padding:6px 2px; margin-top:12px;
+  }
+  .reply .rname.right { text-align:right; margin-top:4px; }
+  .reply .rname::placeholder { font-size:20px; color:#c9b9b4; }
+  .reply textarea {
+    width:100%; height:152px; margin-top:8px; padding:4px 2px; border:0; resize:none; outline:none;
+    font-family:'Nanum Pen Script','Gowun Dodum',cursive; font-size:24px; line-height:38px; color:#222;
+    background:repeating-linear-gradient(transparent 0 37px, #f1e4dc 37px 38px);
+  }
+  .reply .count { text-align:right; font-size:12px; color:#aaa; }
+  .reply .send {
+    display:block; width:100%; margin-top:14px; padding:14px; border:0; border-radius:10px;
+    background:#d23c47; color:#fff; font-size:16px; font-weight:600; font-family:inherit; cursor:pointer;
+  }
+  .reply .send:disabled { opacity:.45; }
+  .reply .hint { margin-top:10px; text-align:center; font-size:13px; color:#999; line-height:1.5; }
+
+
+  /* ---------- 뽑기 ---------- */
+  .game { text-align:center; }
+  .game .title { font-family:'Nanum Pen Script','Gowun Dodum',cursive; font-size:clamp(22px,7vw,30px); color:#5a2f2b; word-break:keep-all; }
+  .game .who { font-size:15px; color:#8a5a55; margin:2px 0 18px; }
+  .machine { position:relative; width:250px; margin:0 auto; }
+  .dome {
+    width:250px; height:250px; border-radius:50%; position:relative; overflow:hidden;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.9) 0 12%, rgba(255,255,255,.35) 13% 100%), #ffe9e6;
+    border:8px solid #d23c47; box-sizing:border-box;
+  }
+  .dome .cap { position:absolute; width:46px; height:46px; border-radius:50%;
+    background:linear-gradient(#fff 0 50%, var(--c) 50% 100%); box-shadow:inset 0 0 0 2px rgba(0,0,0,.08); }
+  .machine.shake .dome .cap { animation:jiggle .25s ease-in-out 4 alternate; }
+  @keyframes jiggle { from { transform:translate(-4px,2px) rotate(-12deg); } to { transform:translate(4px,-3px) rotate(12deg); } }
+  .body { width:230px; height:120px; margin:-14px auto 0; background:#d23c47; border-radius:10px 10px 18px 18px; position:relative; }
+  .lever { position:absolute; left:28px; top:26px; width:64px; height:64px; border-radius:50%; background:#fff; border:0; cursor:pointer;
+    box-shadow:0 4px 0 #b02a34; font-size:12px; color:#d23c47; font-weight:700; font-family:inherit; }
+  .lever::after { content:""; position:absolute; left:50%; top:8px; bottom:8px; width:12px; margin-left:-6px; background:#d23c47; border-radius:6px; transition:transform .5s; }
+  .lever.turn::after { transform:rotate(360deg); }
+  .slot { position:absolute; right:26px; top:30px; width:80px; height:60px; background:#8f1f28; border-radius:10px; }
+  .drop { position:absolute; right:43px; top:-60px; width:46px; height:46px; border-radius:50%; opacity:0; cursor:pointer;
+    background:linear-gradient(#fff 0 50%, var(--c) 50% 100%); box-shadow:0 3px 6px rgba(0,0,0,.25); z-index:2; }
+  .drop.in { animation:fallin .7s cubic-bezier(.3,1.4,.6,1) forwards; }
+  @keyframes fallin { 0%{ opacity:1; transform:translateY(0);} 100%{ opacity:1; transform:translateY(98px);} }
+  .drop.in.wiggle { animation:fallin .7s cubic-bezier(.3,1.4,.6,1) forwards, wig 1s .8s ease-in-out infinite; }
+  @keyframes wig { 0%,100%{ transform:translateY(98px) rotate(0);} 50%{ transform:translateY(98px) rotate(14deg);} }
+  .game .hint3 { margin-top:16px; font-size:14px; color:#8a5a55; min-height:20px; }
+  .reveal { display:none; margin-top:10px; }
+  .reveal.on { display:block; animation:pop .6s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes pop { from { transform:scale(.3); opacity:0; } }
+  .reveal img { height:150px; filter:drop-shadow(0 8px 12px rgba(0,0,0,.25)); }
+  .reveal .big { font-family:'Nanum Pen Script','Gowun Dodum',cursive; font-size:32px; color:#c23a44; margin-top:6px; }
+  .miss { font-family:'Nanum Pen Script','Gowun Dodum',cursive; font-size:34px; color:#7a6a68; }
+
+  /* ---------- 스크래치 ---------- */
+  .scard { position:relative; width:290px; height:330px; margin:0 auto; border-radius:18px; overflow:hidden;
+    background:#fffdf8; box-shadow:0 14px 30px rgba(120,40,40,.25); }
+  .scard .under { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .scard .under img { height:190px; }
+  .scard .under .big { font-family:'Nanum Pen Script','Gowun Dodum',cursive; font-size:34px; color:#c23a44; margin-top:6px; }
+  .scard canvas { position:absolute; inset:0; touch-action:none; cursor:pointer; transition:opacity .6s; }
+
+  .toast {
+    position:fixed; left:50%; bottom:40px; transform:translate(-50%,20px);
+    background:rgba(30,30,30,.88); color:#fff; padding:13px 22px; border-radius:12px;
+    font-family:-apple-system,'Apple SD Gothic Neo',sans-serif; font-size:15px; text-align:center;
+    opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:10; width:max-content; max-width:88vw;
+  }
+  .toast.on { opacity:1; transform:translate(-50%,0); }
+  .heart { position:fixed; top:-30px; pointer-events:none; animation:fall linear forwards; }
+  @keyframes fall { to { transform:translateY(110vh) rotate(var(--r)); } }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- 봉투 -->
+  <div class="env" id="env">
+    <p class="title">빼빼로데이 편지가 도착했어요 💌</p>
+    <p class="who">From. <b id="envFrom">또연</b></p>
+    <div class="envelope" id="envelope">
+      <div class="back"></div>
+      <img class="peek" id="peek" src="p_nude.png" alt="">
+      <div class="front"></div>
+      <div class="flap"></div>
+      <div class="seal">♥</div>
+    </div>
+    <button class="tap" id="openBtn">편지 열어보기</button>
+    <p class="hint2">봉투를 눌러도 열려요</p>
+  </div>
+
+  <!-- 뽑기 -->
+  <div class="game hidden" id="gacha">
+    <p class="title">빼빼로 뽑기권이 도착했어요 🎰</p>
+    <p class="who">From. <b class="fromN">또연</b></p>
+    <div class="machine" id="machine">
+      <div class="dome" id="dome"></div>
+      <div class="body">
+        <button class="lever" id="lever">돌리기</button>
+        <div class="slot"></div>
+        <div class="drop" id="drop"></div>
+      </div>
+    </div>
+    <p class="hint3" id="ghint">하얀 레버를 눌러 돌려보세요!</p>
+    <div class="reveal" id="greveal"></div>
+  </div>
+
+  <!-- 스크래치 -->
+  <div class="game hidden" id="scratch">
+    <p class="title">긁어서 확인하세요! 🪙</p>
+    <p class="who">From. <b class="fromN">또연</b></p>
+    <div class="scard" id="scard">
+      <div class="under"><img id="sprod" src="p_nude.png" alt=""><p class="big">당첨! 🎉</p></div>
+      <canvas id="scv"></canvas>
+    </div>
+    <p class="hint3" id="shint">손가락으로 은박을 긁어보세요</p>
+    <div class="after on" style="margin-top:14px"><button class="pill hidden" id="sNext">편지 보기 💌</button></div>
+  </div>
+
+  <!-- 편지 -->
+  <div class="hidden" id="letterWrap">
+    <div class="letter" id="letterBox">
+      <img class="prod" id="prod" src="p_nude.png" alt="">
+      <div id="letter"></div>
+    </div>
+    <div class="after" id="after"><button class="pill" id="replyBtn">답장 쓰기 💌</button></div>
+  </div>
+
+  <!-- 답장 쓰기 -->
+  <div class="reply hidden" id="reply">
+    <h2 id="replyTitle">답장 쓰기 💌</h2>
+    <input class="rname" id="replyTo" maxlength="20" placeholder="받는 사람 (편지 맨 위)">
+    <textarea id="replyText" maxlength="180" placeholder="여기에 마음을 적어줘 :)"></textarea>
+    <div class="count"><span id="cnt">0</span>/180</div>
+    <input class="rname right" id="replyFrom" maxlength="20" placeholder="보내는 사람 (편지 맨 아래)">
+    <button class="send" id="sendReply" disabled>답장 보내기</button>
+    <p class="hint" id="replyHint">버튼을 누르면 공유 창이 떠요.<br>카톡을 골라서 나에게 보내줘!</p>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  const BASE = 'https://soyeon-log.github.io/pepero/';
+  const PRODUCTS = {
+    original: 'p_original.png', almond: 'p_almond.png', nude: 'p_nude.png', pocky: 'p_pocky.png',
+  };
+  const $ = id => document.getElementById(id);
+
+  function decode(str) {
+    try {
+      const b = atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+      return JSON.parse(new TextDecoder().decode(Uint8Array.from(b, c => c.charCodeAt(0))));
+    } catch (e) { return null; }
+  }
+  function encode(obj) {
+    const bytes = new TextEncoder().encode(JSON.stringify(obj));
+    let bin = ''; bytes.forEach(x => bin += String.fromCharCode(x));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  const clean = s => (s || '').replace(/[^0-9A-Za-z가-힣ㄱ-ㅎㅏ-ㅣ ]/g, '').trim();
+
+  const params = new URLSearchParams(location.search);
+  const D = params.get('d') ? decode(params.get('d')) : null;
+  const isReplyView = params.has('reply');
+
+  // 편지 내용 결정 (d가 없으면 준호에게 보낸 첫 편지)
+  let L;
+  if (isReplyView) {
+    if (D && D.v === 2)      L = { t: null, to: D.to, m: D.r, f: D.f };
+    else if (D && D.r != null) L = { t: null, to: D.to + '❤️', m: D.r, f: '-' + D.f + '-' };
+    else                     L = { t: null, to: '또연❤️', m: params.get('reply') || '', f: '-준호-' };
+  } else if (D && D.m != null) {
+    L = { t: PRODUCTS[D.t] ? D.t : 'nude', to: D.to, m: D.m, f: D.f };
+  } else {
+    L = { t: 'nude', to: '박준호❤️', m: '어떤데 이런 이벤트하는 여자친구 ~~\n사랑해❤️', f: '-또연-' };
+  }
+  const toName = clean(L.to) || '친구';
+  const fromName = clean(L.f) || '친구';
+
+  // 화면 채우기
+  $('envFrom').textContent = fromName;
+  document.querySelectorAll('.fromN').forEach(e => e.textContent = fromName);
+  if (L.t) { $('peek').src = PRODUCTS[L.t]; $('prod').src = PRODUCTS[L.t]; }
+  else { $('peek').classList.add('hidden'); $('prod').classList.add('hidden'); }
+  const letter = $('letter');
+  const add = (t, cls) => { const p = document.createElement('p'); if (cls) p.className = cls; p.textContent = t; letter.appendChild(p); };
+  add(L.to, 'to'); add('');
+  L.m.split('\n').forEach(t => add(t));
+  add(L.f, 'from');
+  const lines = [...letter.querySelectorAll('p')];
+
+  function hearts(n) {
+    for (let i = 0; i < n; i++) {
+      const h = document.createElement('div');
+      h.className = 'heart';
+      h.textContent = ['♥', '♡', '❤'][i % 3];
+      h.style.left = Math.random() * 100 + 'vw';
+      h.style.fontSize = 14 + Math.random() * 18 + 'px';
+      h.style.color = ['#fff', '#ffd6d6', '#d23c47'][i % 3];
+      h.style.setProperty('--r', (Math.random() * 360 - 180) + 'deg');
+      h.style.animationDuration = 3 + Math.random() * 3 + 's';
+      h.style.animationDelay = Math.random() * 1.5 + 's';
+      document.body.appendChild(h);
+      setTimeout(() => h.remove(), 8000);
+    }
+  }
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('on');
+    clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2600);
+  }
+
+  function showLetter(delay) {
+    ['env', 'gacha', 'scratch', 'reply'].forEach(id => $(id).classList.add('hidden'));
+    $('letterWrap').classList.remove('hidden');
+    document.body.classList.add('opened');
+    hearts(28);
+    lines.forEach((p, i) => setTimeout(() => p.classList.add('on'), delay + i * 550));
+    if (!isReplyView) setTimeout(() => $('after').classList.add('on'), delay + lines.length * 550 + 300);
+    else $('after').classList.add('hidden');
+  }
+  function openEnvelope() {
+    $('envelope').classList.add('open');
+    setTimeout(() => showLetter(500), 900);
+  }
+  $('openBtn').onclick = openEnvelope;
+  $('envelope').onclick = openEnvelope;
+
+  // ---------- 답장 ----------
+  const replyTo = $('replyTo'), replyFrom = $('replyFrom'), replyText = $('replyText'), sendReply = $('sendReply');
+  replyTo.value = fromName;
+  replyFrom.value = '-' + toName + '-';
+  $('replyTitle').textContent = fromName + '에게 답장 💌';
+  $('replyHint').innerHTML = '버튼을 누르면 공유 창이 떠요.<br>카톡을 골라서 ' + fromName.replace(/[<>&]/g, '') + '에게 보내줘!';
+  function checkReply() {
+    $('cnt').textContent = replyText.value.length;
+    sendReply.disabled = !(replyText.value.trim() && replyTo.value.trim() && replyFrom.value.trim());
+  }
+  [replyText, replyTo, replyFrom].forEach(el => el.addEventListener('input', checkReply));
+
+  function openReply() {
+    ['env', 'gacha', 'scratch', 'letterWrap'].forEach(id => $(id).classList.add('hidden'));
+    $('reply').classList.remove('hidden');
+    document.body.classList.add('opened');
+    hearts(16);
+  }
+  $('replyBtn').onclick = openReply;
+
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch (e) {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+      ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+      ta.remove(); return ok;
+    }
+  }
+  sendReply.onclick = async () => {
+    const rFrom = replyFrom.value.trim();
+    const url = BASE + 'gift.html?reply&d=' + encode({ v: 2, r: replyText.value.replace(/\s+$/, ''), to: replyTo.value.trim(), f: rFrom });
+    const text = '💌 ' + (clean(rFrom) || toName) + '의 답장이 도착했어요';
+    if (navigator.share) {
+      try { await navigator.share({ title: text, text: text, url: url }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    const ok = await copy(text + '\n' + url);
+    toast(ok ? '링크를 복사했어요! 카톡에 붙여넣어 보내줘' : '복사에 실패했어요 ㅠㅠ');
+  };
+
+
+  // ---------- 뽑기 ----------
+  const COLORS = ['#f2a7a1', '#f6c768', '#9fd3c7', '#b7a6e8', '#f48fb1', '#8ecae6'];
+  function setupGacha() {
+    const dome = $('dome');
+    for (let i = 0; i < 14; i++) {
+      const c = document.createElement('div'); c.className = 'cap';
+      c.style.setProperty('--c', COLORS[i % COLORS.length]);
+      c.style.left = (18 + (i * 37) % 170) + 'px';
+      c.style.top = (95 + Math.floor(i / 5) * 40 + (i % 2) * 8) + 'px';
+      c.style.transform = 'rotate(' + (i * 47 % 360) + 'deg)';
+      dome.appendChild(c);
+    }
+    let misses = Math.max(0, Math.min(3, (D && D.x) || 0));
+    let busy = false, ready = false;
+    const drop = $('drop'), hint = $('ghint'), rev = $('greveal');
+    $('lever').onclick = () => {
+      if (busy || ready) return;
+      busy = true; rev.classList.remove('on'); rev.innerHTML = '';
+      $('lever').classList.add('turn'); $('machine').classList.add('shake');
+      drop.style.setProperty('--c', COLORS[Math.floor(Math.random() * COLORS.length)]);
+      drop.className = 'drop';
+      setTimeout(() => {
+        $('lever').classList.remove('turn'); $('machine').classList.remove('shake');
+        void drop.offsetWidth; drop.className = 'drop in wiggle';
+        hint.textContent = '캡슐이 나왔어요! 눌러서 열어보세요';
+        ready = true; busy = false;
+      }, 1100);
+    };
+    drop.onclick = () => {
+      if (!ready) return;
+      ready = false; drop.className = 'drop'; drop.style.opacity = 0;
+      if (misses > 0) {
+        misses--;
+        rev.innerHTML = '<p class="miss">꽝! 🙃</p>';
+        rev.classList.add('on');
+        hint.textContent = '한 번 더 돌려보세요!';
+      } else {
+        rev.innerHTML = '';
+        if (L.t) { const im = document.createElement('img'); im.src = PRODUCTS[L.t]; rev.appendChild(im); }
+        const p = document.createElement('p'); p.className = 'big'; p.textContent = '당첨! 🎉'; rev.appendChild(p);
+        const b = document.createElement('button'); b.className = 'pill'; b.textContent = '편지 보기 💌'; b.style.marginTop = '10px';
+        b.onclick = () => showLetter(500); rev.appendChild(b);
+        rev.classList.add('on'); hearts(30);
+        setTimeout(() => rev.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+        hint.textContent = ''; $('lever').disabled = true;
+      }
+    };
+  }
+
+  // ---------- 스크래치 ----------
+  function setupScratch() {
+    if (L.t) $('sprod').src = PRODUCTS[L.t]; else $('sprod').classList.add('hidden');
+    const cv = $('scv'), card = $('scard');
+    const dpr = window.devicePixelRatio || 1;
+    const W = card.clientWidth, H = card.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, '#cfcfd4'); g.addColorStop(.5, '#eeeef2'); g.addColorStop(1, '#bdbdc4');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#9a9aa3'; ctx.font = 'bold 22px -apple-system, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('여기를 긁어주세요', W / 2, H / 2);
+    ctx.font = '40px sans-serif'; ctx.fillText('🪙', W / 2, H / 2 - 40);
+    ctx.globalCompositeOperation = 'destination-out';
+    let down = false, last = null, done = false, moves = 0;
+    const pos = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    function scratch(p) {
+      ctx.lineWidth = 42; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo((last || p).x, (last || p).y); ctx.lineTo(p.x, p.y); ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x, p.y, 21, 0, Math.PI * 2); ctx.fill();
+      last = p;
+      if (++moves % 12 === 0) check();
+    }
+    function check() {
+      if (done) return;
+      const d = ctx.getImageData(0, 0, cv.width, cv.height).data;
+      let clear = 0, n = 0;
+      for (let i = 3; i < d.length; i += 4 * 40) { n++; if (d[i] < 50) clear++; }
+      if (clear / n > 0.5) finish();
+    }
+    function finish() {
+      done = true; cv.style.opacity = 0; setTimeout(() => cv.remove(), 700);
+      hearts(30); $('shint').textContent = '축하해요! 🎉'; $('sNext').classList.remove('hidden');
+    }
+    cv.addEventListener('pointerdown', e => { down = true; last = null; cv.setPointerCapture(e.pointerId); scratch(pos(e)); });
+    cv.addEventListener('pointermove', e => { if (down) scratch(pos(e)); });
+    ['pointerup', 'pointercancel'].forEach(t => cv.addEventListener(t, () => { down = false; last = null; check(); }));
+    $('sNext').onclick = () => showLetter(500);
+  }
+
+  // ---------- 시작 화면 ----------
+  if (isReplyView) showLetter(700);                 // 받은 답장 보기
+  else if (params.has('love')) openReply();         // 예전 '감동 표현하기' 링크
+  else if (params.has('letter')) showLetter(700);   // 예전 '선물함으로 가기' 링크
+  else if (D && D.k === 'g') { $('env').classList.add('hidden'); $('gacha').classList.remove('hidden'); setupGacha(); }
+  else if (D && D.k === 's') { $('env').classList.add('hidden'); $('scratch').classList.remove('hidden'); setupScratch(); }
+</script>
+</body>
+</html>

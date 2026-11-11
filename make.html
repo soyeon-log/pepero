@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>빼빼로 편지 만들기</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,'Apple SD Gothic Neo','Gowun Dodum',sans-serif; background:#f7eeee; color:#222; padding:22px 16px 40px; }
+  .wrap { max-width:420px; margin:0 auto; }
+  h1 { font-size:22px; }
+  .sub { color:#999; font-size:13px; margin-top:4px; }
+  .sec { background:#fff; border-radius:16px; padding:18px 16px; margin-top:16px; box-shadow:0 4px 18px rgba(150,80,80,.08); }
+  .sec h2 { font-size:15px; margin-bottom:12px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .item { border:2px solid #eee; border-radius:12px; padding:10px 6px 8px; text-align:center; background:#fff; cursor:pointer;
+    transition:border-color .15s, transform .15s; font:inherit; color:inherit; }
+  .item img { height:110px; width:auto; max-width:100%; display:block; margin:0 auto 6px; object-fit:contain; }
+  .item span { font-size:12px; line-height:1.3; display:block; word-break:keep-all; }
+  .item.on { border-color:#e98a86; background:#fff6f5; transform:scale(1.02); }
+  .modes { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .mode { border:2px solid #eee; border-radius:12px; padding:12px 4px; background:#fff; font:inherit; cursor:pointer; text-align:center; }
+  .mode b { display:block; font-size:24px; margin-bottom:4px; }
+  .mode span { font-size:13px; }
+  .mode.on { border-color:#e98a86; background:#fff6f5; }
+  .misses { margin-top:12px; font-size:13px; color:#666; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .misses button { border:1px solid #e6dede; background:#fff; border-radius:999px; padding:6px 12px; font:inherit; font-size:13px; cursor:pointer; }
+  .misses button.on { border-color:#e98a86; background:#fff6f5; color:#c23a44; }
+  label { display:block; font-size:13px; color:#666; margin:12px 0 6px; }
+  label:first-of-type { margin-top:0; }
+  label small { color:#aaa; }
+  input, textarea { width:100%; border:1px solid #e6dede; border-radius:10px; padding:11px 12px; font:inherit; font-size:16px; background:#fffdf8; outline:none; }
+  input:focus, textarea:focus { border-color:#e98a86; }
+  textarea { height:150px; resize:none; font-family:'Nanum Pen Script','Gowun Dodum',cursive; font-size:22px; line-height:1.5; }
+  .count { text-align:right; font-size:12px; color:#aaa; margin-top:4px; }
+  .btns { margin-top:18px; display:flex; flex-direction:column; gap:10px; }
+  .btn { border:0; border-radius:12px; padding:15px; font:inherit; font-size:16px; font-weight:600; cursor:pointer; }
+  .btn.main { background:#d23c47; color:#fff; }
+  .btn.ghost { background:#fff; color:#555; border:1px solid #e6dede; font-weight:500; }
+  .btn:disabled { opacity:.45; }
+  .note { font-size:12px; color:#aaa; text-align:center; margin-top:8px; line-height:1.5; }
+  .hidden { display:none !important; }
+  .toast { position:fixed; left:50%; bottom:40px; transform:translate(-50%,20px); background:rgba(30,30,30,.88); color:#fff;
+    padding:13px 22px; border-radius:12px; font-size:15px; opacity:0; pointer-events:none; transition:.25s; width:max-content; max-width:88vw; text-align:center; }
+  .toast.on { opacity:1; transform:translate(-50%,0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>💌 빼빼로 편지 만들기</h1>
+  <p class="sub">고르고, 쓰고, 링크로 보내면 끝!</p>
+
+  <div class="sec">
+    <h2>1. 빼빼로 고르기</h2>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="sec">
+    <h2>2. 여는 방식 고르기</h2>
+    <div class="modes" id="modes">
+      <button class="mode on" data-k="e"><b>💌</b><span>편지 봉투</span></button>
+      <button class="mode" data-k="g"><b>🎰</b><span>뽑기</span></button>
+      <button class="mode" data-k="s"><b>🪙</b><span>스크래치</span></button>
+    </div>
+    <div class="misses hidden" id="missBox">꽝 횟수:
+      <button data-x="0" class="on">없음</button><button data-x="1">1번</button><button data-x="2">2번</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>3. 편지 쓰기</h2>
+    <label for="to">받는 사람 <small>(편지 맨 위)</small></label>
+    <input id="to" placeholder="예: 박준호❤️" maxlength="20">
+    <label for="msg">편지 내용</label>
+    <textarea id="msg" maxlength="150" placeholder="줄바꿈도 그대로 들어가요"></textarea>
+    <div class="count"><span id="cnt">0</span>/150</div>
+    <label for="from">보내는 사람 <small>(편지 맨 아래)</small></label>
+    <input id="from" placeholder="예: -또연-" maxlength="20" value="-또연-">
+  </div>
+
+  <div class="btns">
+    <button class="btn ghost" id="preview" disabled>받는 화면 미리보기</button>
+    <button class="btn main" id="share" disabled>공유하기 (카톡 선택)</button>
+    <button class="btn ghost" id="copy" disabled>링크 복사</button>
+  </div>
+  <p class="note">공유하기를 누르면 휴대폰 공유 창이 떠요. 카톡을 고르고 받을 사람을 선택하세요.<br>공유 창이 안 뜨면 링크 복사 후 카톡에 붙여넣으면 돼요.</p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  const BASE = 'https://soyeon-log.github.io/pepero/';
+  const PRODUCTS = {
+    original: { label: '빼빼로 오리지널', img: 'p_original.png' },
+    almond:   { label: '빼빼로 아몬드',   img: 'p_almond.png' },
+    nude:     { label: '빼빼로 초코필드', img: 'p_nude.png' },
+    pocky:    { label: '포키 극세',       img: 'p_pocky.png' },
+  };
+  const $ = id => document.getElementById(id);
+
+  let pick = 'original';
+  const grid = $('grid');
+  Object.entries(PRODUCTS).forEach(([key, p]) => {
+    const b = document.createElement('button');
+    b.className = 'item' + (key === pick ? ' on' : '');
+    b.innerHTML = '<img alt=""><span></span>';
+    b.querySelector('img').src = p.img;
+    b.querySelector('span').textContent = p.label;
+    b.onclick = () => { pick = key; grid.querySelectorAll('.item').forEach(x => x.classList.remove('on')); b.classList.add('on'); };
+    grid.appendChild(b);
+  });
+
+  let mode = 'e', misses = 0;
+  document.querySelectorAll('.mode').forEach(b => b.onclick = () => {
+    mode = b.dataset.k;
+    document.querySelectorAll('.mode').forEach(x => x.classList.toggle('on', x === b));
+    $('missBox').classList.toggle('hidden', mode !== 'g');
+  });
+  document.querySelectorAll('#missBox button').forEach(b => b.onclick = () => {
+    misses = Number(b.dataset.x);
+    document.querySelectorAll('#missBox button').forEach(x => x.classList.toggle('on', x === b));
+  });
+
+  const toEl = $('to'), msgEl = $('msg'), fromEl = $('from');
+  function check() {
+    $('cnt').textContent = msgEl.value.length;
+    const ok = toEl.value.trim() && msgEl.value.trim() && fromEl.value.trim();
+    ['preview', 'share', 'copy'].forEach(id => $(id).disabled = !ok);
+  }
+  [toEl, msgEl, fromEl].forEach(el => el.addEventListener('input', check));
+  check();
+
+  function encode(obj) {
+    const bytes = new TextEncoder().encode(JSON.stringify(obj));
+    let bin = ''; bytes.forEach(x => bin += String.fromCharCode(x));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  const link = () => {
+    const o = { t: pick, to: toEl.value.trim(), m: msgEl.value.replace(/\s+$/, ''), f: fromEl.value.trim() };
+    if (mode !== 'e') o.k = mode;
+    if (mode === 'g' && misses) o.x = misses;
+    return BASE + 'gift.html?d=' + encode(o);
+  };
+  const clean = s => (s || '').replace(/[^0-9A-Za-z가-힣ㄱ-ㅎㅏ-ㅣ ]/g, '').trim();
+  const shareText = () => {
+    const n = clean(fromEl.value) || '친구';
+    if (mode === 'g') return '🎰 ' + n + '의 빼빼로 뽑기권이 도착했어요! 한 번 돌려봐';
+    if (mode === 's') return '🪙 스크래치 카드가 도착했어요! 긁어서 확인해봐 (From. ' + n + ')';
+    return '💌 ' + n + '의 빼빼로데이 편지가 도착했어요';
+  };
+
+  function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2600); }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch (e) {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (_) {} ta.remove(); return ok;
+    }
+  }
+
+  $('preview').onclick = () => window.open(link(), '_blank');
+  $('share').onclick = async () => {
+    const url = link();
+    if (navigator.share) {
+      try { await navigator.share({ title: shareText(), text: shareText(), url }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    const ok = await copyText(shareText() + '\n' + url);
+    toast(ok ? '공유 창을 열 수 없어서 링크를 복사했어요. 카톡에 붙여넣어 주세요!' : '복사에 실패했어요 ㅠㅠ');
+  };
+  $('copy').onclick = async () => {
+    const ok = await copyText(shareText() + '\n' + link());
+    toast(ok ? '링크를 복사했어요! 카톡에 붙여넣어 주세요' : '복사에 실패했어요 ㅠㅠ');
+  };
+</script>
+</body>
+</html>
