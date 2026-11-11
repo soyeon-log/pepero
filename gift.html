@@ -184,7 +184,7 @@
   <!-- 봉투 -->
   <div class="env" id="env">
     <p class="title">빼빼로데이 편지가 도착했어요 💌</p>
-    <p class="who">From. <b id="envFrom">또연</b></p>
+    <p class="who">From. <b id="envFrom"></b></p>
     <div class="envelope" id="envelope">
       <div class="back"></div>
       <img class="peek" id="peek" src="p_nude.png" alt="">
@@ -199,7 +199,7 @@
   <!-- 뽑기 -->
   <div class="game hidden" id="gacha">
     <p class="title">캡슐을 열어보세요 🎈</p>
-    <p class="who">From. <b class="fromN">또연</b></p>
+    <p class="who">From. <b class="fromN"></b></p>
     <div class="machine" id="machine">
       <div class="dome" id="dome"></div>
       <div class="body">
@@ -215,7 +215,7 @@
   <!-- 스크래치 -->
   <div class="game hidden" id="scratch">
     <p class="title">포장지를 벗겨보세요 🎀</p>
-    <p class="who">From. <b class="fromN">또연</b></p>
+    <p class="who">From. <b class="fromN"></b></p>
     <div class="scard" id="scard">
       <div class="under"><img id="sprod" src="p_nude.png" alt=""><p class="big">짠! 🎉</p></div>
       <canvas id="scv"></canvas>
@@ -276,16 +276,16 @@
   const D = params.get('d') ? decode(params.get('d')) : null;
   const isReplyView = params.has('reply');
 
-  // 편지 내용 결정 (d가 없으면 준호에게 보낸 첫 편지)
+  // 편지 내용 결정 (d가 없으면 예시 편지)
   let L;
   if (isReplyView) {
     if (D && D.v === 2)      L = { t: null, to: D.to, m: D.r, f: D.f };
     else if (D && D.r != null) L = { t: null, to: D.to + '❤️', m: D.r, f: '-' + D.f + '-' };
-    else                     L = { t: null, to: '또연❤️', m: params.get('reply') || '', f: '-준호-' };
+    else                     L = { t: null, to: '홍길동', m: params.get('reply') || '', f: '-홍길동-' };
   } else if (D && D.m != null) {
     L = { t: PRODUCTS[D.t] ? D.t : 'nude', to: D.to, m: D.m, f: D.f };
   } else {
-    L = { t: 'nude', to: '박준호❤️', m: '어떤데 이런 이벤트하는 여자친구 ~~\n사랑해❤️', f: '-또연-' };
+    L = { t: 'original', to: '홍길동', m: '빼빼로데이 축하해!\n늘 고마워 :)', f: '-홍길동-' };
   }
   const toName = clean(L.to) || '친구';
   const fromName = clean(L.f) || '친구';
