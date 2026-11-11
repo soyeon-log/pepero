@@ -24,9 +24,6 @@
   .mode b { display:block; font-size:24px; margin-bottom:4px; }
   .mode span { font-size:13px; }
   .mode.on { border-color:#e98a86; background:#fff6f5; }
-  .misses { margin-top:12px; font-size:13px; color:#666; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .misses button { border:1px solid #e6dede; background:#fff; border-radius:999px; padding:6px 12px; font:inherit; font-size:13px; cursor:pointer; }
-  .misses button.on { border-color:#e98a86; background:#fff6f5; color:#c23a44; }
   label { display:block; font-size:13px; color:#666; margin:12px 0 6px; }
   label:first-of-type { margin-top:0; }
   label small { color:#aaa; }
@@ -45,6 +42,7 @@
     padding:13px 22px; border-radius:12px; font-size:15px; opacity:0; pointer-events:none; transition:.25s; width:max-content; max-width:88vw; text-align:center; }
   .toast.on { opacity:1; transform:translate(-50%,0); }
 </style>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.8.2/kakao.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
 <div class="wrap">
@@ -52,7 +50,7 @@
   <p class="sub">고르고, 쓰고, 링크로 보내면 끝!</p>
 
   <div class="sec">
-    <h2>1. 빼빼로 고르기</h2>
+    <h2>1. 과자 고르기</h2>
     <div class="grid" id="grid"></div>
   </div>
 
@@ -60,12 +58,10 @@
     <h2>2. 여는 방식 고르기</h2>
     <div class="modes" id="modes">
       <button class="mode on" data-k="e"><b>💌</b><span>편지 봉투</span></button>
-      <button class="mode" data-k="g"><b>🎰</b><span>뽑기</span></button>
-      <button class="mode" data-k="s"><b>🪙</b><span>스크래치</span></button>
+      <button class="mode" data-k="g"><b>🎈</b><span>캡슐 열기</span></button>
+      <button class="mode" data-k="s"><b>🎀</b><span>포장지 벗기기</span></button>
     </div>
-    <div class="misses hidden" id="missBox">꽝 횟수:
-      <button data-x="0" class="on">없음</button><button data-x="1">1번</button><button data-x="2">2번</button>
-    </div>
+
   </div>
 
   <div class="sec">
@@ -81,20 +77,25 @@
 
   <div class="btns">
     <button class="btn ghost" id="preview" disabled>받는 화면 미리보기</button>
-    <button class="btn main" id="share" disabled>공유하기 (카톡 선택)</button>
+    <button class="btn main" id="share" disabled>카톡으로 보내기</button>
     <button class="btn ghost" id="copy" disabled>링크 복사</button>
   </div>
-  <p class="note">공유하기를 누르면 휴대폰 공유 창이 떠요. 카톡을 고르고 받을 사람을 선택하세요.<br>공유 창이 안 뜨면 링크 복사 후 카톡에 붙여넣으면 돼요.</p>
+  <p class="note">보내기를 누르면 카톡 친구 목록이 떠요. 받을 사람을 고르면 끝!<br>잘 안 되면 링크 복사 후 카톡에 붙여넣으면 돼요.</p>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
   const BASE = 'https://soyeon-log.github.io/pepero/';
+  // ---------- 카카오톡 공유 (JavaScript 키를 넣으면 카드형 말풍선으로 보냄) ----------
+  const KAKAO_KEY = '';
+  let kakaoReady = false;
+  try { if (KAKAO_KEY && window.Kakao) { if (!Kakao.isInitialized()) Kakao.init(KAKAO_KEY); kakaoReady = true; } } catch (e) {}
+
   const PRODUCTS = {
-    original: { label: '빼빼로 오리지널', img: 'p_original.png' },
-    almond:   { label: '빼빼로 아몬드',   img: 'p_almond.png' },
-    nude:     { label: '빼빼로 초코필드', img: 'p_nude.png' },
-    pocky:    { label: '포키 극세',       img: 'p_pocky.png' },
+    original: { label: '오리지널 초코', img: 'p_original.png' },
+    almond:   { label: '아몬드 초코',   img: 'p_almond.png' },
+    nude:     { label: '누드 초코', img: 'p_nude.png' },
+    pocky:    { label: '극세 초코',       img: 'p_pocky.png' },
   };
   const $ = id => document.getElementById(id);
 
@@ -110,16 +111,12 @@
     grid.appendChild(b);
   });
 
-  let mode = 'e', misses = 0;
+  let mode = 'e';
   document.querySelectorAll('.mode').forEach(b => b.onclick = () => {
     mode = b.dataset.k;
     document.querySelectorAll('.mode').forEach(x => x.classList.toggle('on', x === b));
-    $('missBox').classList.toggle('hidden', mode !== 'g');
   });
-  document.querySelectorAll('#missBox button').forEach(b => b.onclick = () => {
-    misses = Number(b.dataset.x);
-    document.querySelectorAll('#missBox button').forEach(x => x.classList.toggle('on', x === b));
-  });
+
 
   const toEl = $('to'), msgEl = $('msg'), fromEl = $('from');
   function check() {
@@ -138,16 +135,10 @@
   const link = () => {
     const o = { t: pick, to: toEl.value.trim(), m: msgEl.value.replace(/\s+$/, ''), f: fromEl.value.trim() };
     if (mode !== 'e') o.k = mode;
-    if (mode === 'g' && misses) o.x = misses;
     return BASE + 'gift.html?d=' + encode(o);
   };
   const clean = s => (s || '').replace(/[^0-9A-Za-z가-힣ㄱ-ㅎㅏ-ㅣ ]/g, '').trim();
-  const shareText = () => {
-    const n = clean(fromEl.value) || '친구';
-    if (mode === 'g') return '🎰 ' + n + '의 빼빼로 뽑기권이 도착했어요! 한 번 돌려봐';
-    if (mode === 's') return '🪙 스크래치 카드가 도착했어요! 긁어서 확인해봐 (From. ' + n + ')';
-    return '💌 ' + n + '의 빼빼로데이 편지가 도착했어요';
-  };
+  const shareText = () => '💌 깜짝 편지가 도착했어요 (From. ' + (clean(fromEl.value) || '친구') + ')';
 
   function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2600); }
   async function copyText(text) {
@@ -161,6 +152,22 @@
   $('preview').onclick = () => window.open(link(), '_blank');
   $('share').onclick = async () => {
     const url = link();
+    if (kakaoReady) {
+      try {
+        Kakao.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: '💌 깜짝 편지가 도착했어요',
+            description: 'From. ' + (clean(fromEl.value) || '친구'),
+            imageUrl: BASE + 'og_letter.png',
+            imageWidth: 1200, imageHeight: 630,
+            link: { mobileWebUrl: url, webUrl: url },
+          },
+          buttons: [{ title: '열어보기', link: { mobileWebUrl: url, webUrl: url } }],
+        });
+        return;
+      } catch (e) { /* 실패하면 아래 공유 창으로 */ }
+    }
     if (navigator.share) {
       try { await navigator.share({ title: shareText(), text: shareText(), url }); return; }
       catch (e) { if (e && e.name === 'AbortError') return; }

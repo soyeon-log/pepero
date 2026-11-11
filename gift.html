@@ -157,7 +157,6 @@
   @keyframes pop { from { transform:scale(.3); opacity:0; } }
   .reveal img { height:150px; filter:drop-shadow(0 8px 12px rgba(0,0,0,.25)); }
   .reveal .big { font-family:'Nanum Pen Script','Gowun Dodum',cursive; font-size:32px; color:#c23a44; margin-top:6px; }
-  .miss { font-family:'Nanum Pen Script','Gowun Dodum',cursive; font-size:34px; color:#7a6a68; }
 
   /* ---------- 스크래치 ---------- */
   .scard { position:relative; width:290px; height:330px; margin:0 auto; border-radius:18px; overflow:hidden;
@@ -177,6 +176,7 @@
   .heart { position:fixed; top:-30px; pointer-events:none; animation:fall linear forwards; }
   @keyframes fall { to { transform:translateY(110vh) rotate(var(--r)); } }
 </style>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.8.2/kakao.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
 <div class="stage">
@@ -198,7 +198,7 @@
 
   <!-- 뽑기 -->
   <div class="game hidden" id="gacha">
-    <p class="title">빼빼로 뽑기권이 도착했어요 🎰</p>
+    <p class="title">캡슐을 열어보세요 🎈</p>
     <p class="who">From. <b class="fromN">또연</b></p>
     <div class="machine" id="machine">
       <div class="dome" id="dome"></div>
@@ -214,13 +214,13 @@
 
   <!-- 스크래치 -->
   <div class="game hidden" id="scratch">
-    <p class="title">긁어서 확인하세요! 🪙</p>
+    <p class="title">포장지를 벗겨보세요 🎀</p>
     <p class="who">From. <b class="fromN">또연</b></p>
     <div class="scard" id="scard">
-      <div class="under"><img id="sprod" src="p_nude.png" alt=""><p class="big">당첨! 🎉</p></div>
+      <div class="under"><img id="sprod" src="p_nude.png" alt=""><p class="big">짠! 🎉</p></div>
       <canvas id="scv"></canvas>
     </div>
-    <p class="hint3" id="shint">손가락으로 은박을 긁어보세요</p>
+    <p class="hint3" id="shint">손가락으로 포장지를 문질러 보세요</p>
     <div class="after on" style="margin-top:14px"><button class="pill hidden" id="sNext">편지 보기 💌</button></div>
   </div>
 
@@ -241,7 +241,7 @@
     <div class="count"><span id="cnt">0</span>/180</div>
     <input class="rname right" id="replyFrom" maxlength="20" placeholder="보내는 사람 (편지 맨 아래)">
     <button class="send" id="sendReply" disabled>답장 보내기</button>
-    <p class="hint" id="replyHint">버튼을 누르면 공유 창이 떠요.<br>카톡을 골라서 나에게 보내줘!</p>
+    <p class="hint" id="replyHint">버튼을 누르면 카톡 친구 목록이 떠요.</p>
   </div>
 
 </div>
@@ -249,6 +249,11 @@
 
 <script>
   const BASE = 'https://soyeon-log.github.io/pepero/';
+  // ---------- 카카오톡 공유 (JavaScript 키를 넣으면 카드형 말풍선으로 보냄) ----------
+  const KAKAO_KEY = '';
+  let kakaoReady = false;
+  try { if (KAKAO_KEY && window.Kakao) { if (!Kakao.isInitialized()) Kakao.init(KAKAO_KEY); kakaoReady = true; } } catch (e) {}
+
   const PRODUCTS = {
     original: 'p_original.png', almond: 'p_almond.png', nude: 'p_nude.png', pocky: 'p_pocky.png',
   };
@@ -338,7 +343,7 @@
   replyTo.value = fromName;
   replyFrom.value = '-' + toName + '-';
   $('replyTitle').textContent = fromName + '에게 답장 💌';
-  $('replyHint').innerHTML = '버튼을 누르면 공유 창이 떠요.<br>카톡을 골라서 ' + fromName.replace(/[<>&]/g, '') + '에게 보내줘!';
+  $('replyHint').textContent = '버튼을 누르면 카톡 친구 목록이 떠요. ' + fromName + '에게 보내줘!';
   function checkReply() {
     $('cnt').textContent = replyText.value.length;
     sendReply.disabled = !(replyText.value.trim() && replyTo.value.trim() && replyFrom.value.trim());
@@ -365,6 +370,12 @@
     const rFrom = replyFrom.value.trim();
     const url = BASE + 'gift.html?reply&d=' + encode({ v: 2, r: replyText.value.replace(/\s+$/, ''), to: replyTo.value.trim(), f: rFrom });
     const text = '💌 ' + (clean(rFrom) || toName) + '의 답장이 도착했어요';
+    if (kakaoReady) {
+      try {
+        Kakao.Share.sendDefault({ objectType: 'text', text: text, link: { mobileWebUrl: url, webUrl: url }, buttonTitle: '답장 열어보기' });
+        return;
+      } catch (e) { /* 실패하면 아래 공유 창으로 */ }
+    }
     if (navigator.share) {
       try { await navigator.share({ title: text, text: text, url: url }); return; }
       catch (e) { if (e && e.name === 'AbortError') return; }
@@ -386,7 +397,6 @@
       c.style.transform = 'rotate(' + (i * 47 % 360) + 'deg)';
       dome.appendChild(c);
     }
-    let misses = Math.max(0, Math.min(3, (D && D.x) || 0));
     let busy = false, ready = false;
     const drop = $('drop'), hint = $('ghint'), rev = $('greveal');
     $('lever').onclick = () => {
@@ -405,15 +415,10 @@
     drop.onclick = () => {
       if (!ready) return;
       ready = false; drop.className = 'drop'; drop.style.opacity = 0;
-      if (misses > 0) {
-        misses--;
-        rev.innerHTML = '<p class="miss">꽝! 🙃</p>';
-        rev.classList.add('on');
-        hint.textContent = '한 번 더 돌려보세요!';
-      } else {
+      {
         rev.innerHTML = '';
         if (L.t) { const im = document.createElement('img'); im.src = PRODUCTS[L.t]; rev.appendChild(im); }
-        const p = document.createElement('p'); p.className = 'big'; p.textContent = '당첨! 🎉'; rev.appendChild(p);
+        const p = document.createElement('p'); p.className = 'big'; p.textContent = '짠! 🎉'; rev.appendChild(p);
         const b = document.createElement('button'); b.className = 'pill'; b.textContent = '편지 보기 💌'; b.style.marginTop = '10px';
         b.onclick = () => showLetter(500); rev.appendChild(b);
         rev.classList.add('on'); hearts(30);
@@ -431,12 +436,18 @@
     const W = card.clientWidth, H = card.clientHeight;
     cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
     const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
-    const g = ctx.createLinearGradient(0, 0, W, H);
-    g.addColorStop(0, '#cfcfd4'); g.addColorStop(.5, '#eeeef2'); g.addColorStop(1, '#bdbdc4');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#9a9aa3'; ctx.font = 'bold 22px -apple-system, sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('여기를 긁어주세요', W / 2, H / 2);
-    ctx.font = '40px sans-serif'; ctx.fillText('🪙', W / 2, H / 2 - 40);
+    ctx.fillStyle = '#f7b8b3'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fbd3cf';
+    for (let x = -H; x < W; x += 36) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 18, 0); ctx.lineTo(x + 18 + H, H); ctx.lineTo(x + H, H); ctx.fill(); }
+    ctx.fillStyle = '#ffffff';
+    const heart = (x, y, s) => { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.beginPath(); ctx.moveTo(0, 6);
+      ctx.bezierCurveTo(-12, -6, -6, -16, 0, -9); ctx.bezierCurveTo(6, -16, 12, -6, 0, 6); ctx.fill(); ctx.restore(); };
+    for (let y = 30; y < H; y += 60) for (let x = (y / 60 % 2) * 30 + 25; x < W; x += 60) heart(x, y, 1.1);
+    ctx.fillStyle = '#d23c47'; ctx.fillRect(W / 2 - 14, 0, 28, H); ctx.fillRect(0, H / 2 - 14, W, 28);
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(W / 2 - 100, H - 62, 200, 38, 19) : ctx.rect(W / 2 - 100, H - 62, 200, 38); ctx.fill();
+    ctx.fillStyle = '#c23a44'; ctx.font = 'bold 16px -apple-system, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('문질러서 벗겨보세요', W / 2, H - 43);
     ctx.globalCompositeOperation = 'destination-out';
     let down = false, last = null, done = false, moves = 0;
     const pos = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
@@ -456,7 +467,7 @@
     }
     function finish() {
       done = true; cv.style.opacity = 0; setTimeout(() => cv.remove(), 700);
-      hearts(30); $('shint').textContent = '축하해요! 🎉'; $('sNext').classList.remove('hidden');
+      hearts(30); $('shint').textContent = '짠! 🎉'; $('sNext').classList.remove('hidden');
     }
     cv.addEventListener('pointerdown', e => { down = true; last = null; cv.setPointerCapture(e.pointerId); scratch(pos(e)); });
     cv.addEventListener('pointermove', e => { if (down) scratch(pos(e)); });
